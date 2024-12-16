@@ -309,7 +309,6 @@ public class MVPanel {
             this.repaint(mapViewer);
         });
 
-
         info.addActionListener(e -> {
             int id1 = Integer.parseInt(numberField3.getText());
 
