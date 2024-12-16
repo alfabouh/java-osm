@@ -38,7 +38,7 @@ public class MapViewerExt extends JXMapViewer {
             int y = (int) (this.getHeight() / 2f - offsetY) - 10;
 
             g2d.setColor(Color.BLACK);
-            g2d.drawString(m.getKey().getAddress().substring(0, 32), x, y + 40);
+            g2d.drawString(m.getKey().getAddress().substring(0, 50), x, y + 40);
 
             g2d.setColor(m.getKey().getMarkerType().getColor());
             g2d.fillRect(x, y, 20, 20);

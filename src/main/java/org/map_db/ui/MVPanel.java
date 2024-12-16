@@ -298,6 +298,12 @@ public class MVPanel {
             if (m1.getMarkerType() == MarkerType.HEAD) {
                 this.getAddressHandler().setHeadCenter(null);
             }
+            for (Marker marker : this.getMarkersContainer().getMarkers().get(m1)) {
+                if (marker.getMarkerType() == MarkerType.CLIENT) {
+                    this.getMarkersContainer().removeEdge(marker);
+                    DB.deleteEdge(marker);
+                }
+            }
             this.getMarkersContainer().removeEdge(m1);
             DB.deleteEdge(m1);
             this.repaint(mapViewer);
