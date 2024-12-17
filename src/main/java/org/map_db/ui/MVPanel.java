@@ -324,7 +324,9 @@ public class MVPanel {
                 }
                 case CLIENT: {
                     Pair<Marker, Double> pair = DB.getClientsSupplyP(m1);
-                    JOptionPane.showMessageDialog(null, "Клиент" + "\n" + m1.getAddress() + "\n" + "Пункт выдачи: " + pair.getFirst().getAddress() + "\n" + "Расстояние: " + pair.getSecond(), "Info", JOptionPane.INFORMATION_MESSAGE);
+                    if (pair != null) {
+                        JOptionPane.showMessageDialog(null, "Клиент" + "\n" + m1.getAddress() + "\n" + "Пункт выдачи: " + pair.getFirst().getAddress() + "\n" + "Расстояние: " + pair.getSecond(), "Info", JOptionPane.INFORMATION_MESSAGE);
+                    }
                     break;
                 }
                 case SUPPLY: {

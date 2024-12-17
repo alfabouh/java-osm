@@ -15,17 +15,21 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class DB {
+    public static Driver DRIVER = null;
+
     public static final String ip = "localhost";
     public static final String port = "7687";
     public static final String name = "neo4j";
     public static final String pass = "12345678";
 
     public static Pair<Marker, Double> getClientsSupplyP(@NonNull Marker client) {
+        if (DB.DRIVER == null) {
+            return null;
+        }
         String label1 = MarkerType.CLIENT.getName();
         String label2 = MarkerType.SUPPLY.getName();
 
-        try (Driver driver = GraphDatabase.driver("bolt://" + ip + ":" + port, AuthTokens.basic(name, pass));
-             Session session = driver.session()) {
+        try (Session session = DB.DRIVER.session()) {
 
             String query = String.format(
                     "MATCH (client:%s)-[r:CONNECTED_TO]->(supply:%s) " +
@@ -58,10 +62,12 @@ public abstract class DB {
     }
 
     public static void deleteEdge(@NonNull Marker marker) {
+        if (DB.DRIVER == null) {
+            return;
+        }
         String label1 = marker.getMarkerType().getName();
 
-        try (Driver driver = GraphDatabase.driver("bolt://" + ip + ":" + port, AuthTokens.basic(name, pass));
-             Session session = driver.session()) {
+        try (Session session = DB.DRIVER.session()) {
 
             session.writeTransaction((TransactionWork<Void>) tx -> {
                 String query = String.format("MATCH (n:%s) ", label1) +
@@ -80,8 +86,10 @@ public abstract class DB {
     }
 
     public static void createEdge(@NonNull Marker marker) {
-        try (Driver driver = GraphDatabase.driver("bolt://" + ip + ":" + port, AuthTokens.basic(name, pass));
-             Session session = driver.session()) {
+        if (DB.DRIVER == null) {
+            return;
+        }
+        try (Session session = DB.DRIVER.session()) {
 
             String address = marker.getAddress();
             if (address.length() > 80) {
@@ -104,12 +112,17 @@ public abstract class DB {
     }
 
     public static EdgesPacket loadAllNodes() {
+        DB.DRIVER = GraphDatabase.driver("bolt://" + ip + ":" + port, AuthTokens.basic(name, pass));
+
         AtomicReference<AddressHandler.PointData> head = new AtomicReference<>();
         MarkersContainer markersContainer = new MarkersContainer();
         HashSet<Marker> isolatedMarkers = new HashSet<>();
 
-        try (Driver driver = GraphDatabase.driver("bolt://" + ip + ":" + port, AuthTokens.basic(name, pass));
-             Session session = driver.session()) {
+        if (DB.DRIVER == null) {
+            return new EdgesPacket(null, markersContainer);
+        }
+
+        try (Session session = DB.DRIVER.session()) {
 
             String query = "MATCH (n) " +
                     "OPTIONAL MATCH (n)-[r:CONNECTED_TO]->(m) " +
@@ -205,80 +218,79 @@ public abstract class DB {
     }
 
     public static int getClientCountAttachedToMarker(Marker marker) {
+        if (DB.DRIVER == null) {
+            return 0;
+        }
         String label1 = MarkerType.SUPPLY.getName();
         String label2 = MarkerType.CLIENT.getName();
 
-        try (Driver driver = GraphDatabase.driver("bolt://" + ip + ":" + port, AuthTokens.basic(name, pass))) {
-            try (Session session = driver.session()) {
-                String query = String.format("MATCH (a:%s)-[r:CONNECTED_TO]->(b:%s) ", label1, label2) +
-                        "WHERE a.latitude = $lat AND a.longitude = $lon " +
-                        "RETURN COUNT(b) AS clientCount";
+        try (Session session = DB.DRIVER.session()) {
+            String query = String.format("MATCH (a:%s)-[r:CONNECTED_TO]->(b:%s) ", label1, label2) +
+                    "WHERE a.latitude = $lat AND a.longitude = $lon " +
+                    "RETURN COUNT(b) AS clientCount";
 
-                Map<String, Object> params = new HashMap<>();
-                params.put("lat", marker.getGeoPosition().getLatitude());
-                params.put("lon", marker.getGeoPosition().getLongitude());
+            Map<String, Object> params = new HashMap<>();
+            params.put("lat", marker.getGeoPosition().getLatitude());
+            params.put("lon", marker.getGeoPosition().getLongitude());
 
-                Result result = session.run(query, params);
-                if (result.hasNext()) {
-                    return result.next().get("clientCount").asInt();
-                }
+            Result result = session.run(query, params);
+            if (result.hasNext()) {
+                return result.next().get("clientCount").asInt();
             }
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
         }
         return 0;
     }
 
     public static void deleteRelation(@NonNull Marker marker1, @NonNull Marker marker2) {
+        if (DB.DRIVER == null) {
+            return;
+        }
         String label1 = marker1.getMarkerType().getName();
         String label2 = marker2.getMarkerType().getName();
 
-        try (Driver driver = GraphDatabase.driver("bolt://" + ip + ":" + port, AuthTokens.basic(name, pass))) {
-            try (Session session = driver.session()) {
-                String query = String.format("MATCH (a:%s)-[r:CONNECTED_TO]->(b:%s) ", label1, label2) +
-                        "WHERE a.latitude = $lat1 AND a.longitude = $lon1 " +
-                        "AND b.latitude = $lat2 AND b.longitude = $lon2 " +
-                        "WITH r " +
-                        "WHERE r IS NOT NULL " +
-                        "DELETE r";
+        try (Session session = DB.DRIVER.session()) {
+            String query = String.format("MATCH (a:%s)-[r:CONNECTED_TO]->(b:%s) ", label1, label2) +
+                    "WHERE a.latitude = $lat1 AND a.longitude = $lon1 " +
+                    "AND b.latitude = $lat2 AND b.longitude = $lon2 " +
+                    "WITH r " +
+                    "WHERE r IS NOT NULL " +
+                    "DELETE r";
 
-                Map<String, Object> params = new HashMap<>();
-                params.put("lat1", marker1.getGeoPosition().getLatitude());
-                params.put("lon1", marker1.getGeoPosition().getLongitude());
-                params.put("lat2", marker2.getGeoPosition().getLatitude());
-                params.put("lon2", marker2.getGeoPosition().getLongitude());
+            Map<String, Object> params = new HashMap<>();
+            params.put("lat1", marker1.getGeoPosition().getLatitude());
+            params.put("lon1", marker1.getGeoPosition().getLongitude());
+            params.put("lat2", marker2.getGeoPosition().getLatitude());
+            params.put("lon2", marker2.getGeoPosition().getLongitude());
 
-                session.writeTransaction(tx -> tx.run(query, params));
-            } catch (Exception e) {
-                e.printStackTrace(System.err);
-            }
+            session.writeTransaction(tx -> tx.run(query, params));
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
         }
     }
 
     public static void createRelation(@NonNull Marker marker1, @NonNull Marker marker2) {
+        if (DB.DRIVER == null) {
+            return;
+        }
         String label1 = marker1.getMarkerType().getName();
         String label2 = marker2.getMarkerType().getName();
 
-        try (Driver driver = GraphDatabase.driver("bolt://" + ip + ":" + port, AuthTokens.basic(name, pass))) {
-            double distance = calculateDistance(marker1.getGeoPosition(), marker2.getGeoPosition());
+        double distance = calculateDistance(marker1.getGeoPosition(), marker2.getGeoPosition());
 
-            try (Session session = driver.session()) {
-                String query = String.format("MATCH (a:%s), (b:%s) ", label1, label2) +
-                        "WHERE a.latitude = $lat1 AND a.longitude = $lon1 " +
-                        "AND b.latitude = $lat2 AND b.longitude = $lon2 " +
-                        "MERGE (a)-[r:CONNECTED_TO {distance: $distance}]->(b)";
+        try (Session session = DB.DRIVER.session()) {
+            String query = String.format("MATCH (a:%s), (b:%s) ", label1, label2) +
+                    "WHERE a.latitude = $lat1 AND a.longitude = $lon1 " +
+                    "AND b.latitude = $lat2 AND b.longitude = $lon2 " +
+                    "MERGE (a)-[r:CONNECTED_TO {distance: $distance}]->(b)";
 
-                Map<String, Object> params = new HashMap<>();
-                params.put("lat1", marker1.getGeoPosition().getLatitude());
-                params.put("lon1", marker1.getGeoPosition().getLongitude());
-                params.put("lat2", marker2.getGeoPosition().getLatitude());
-                params.put("lon2", marker2.getGeoPosition().getLongitude());
-                params.put("distance", distance);
+            Map<String, Object> params = new HashMap<>();
+            params.put("lat1", marker1.getGeoPosition().getLatitude());
+            params.put("lon1", marker1.getGeoPosition().getLongitude());
+            params.put("lat2", marker2.getGeoPosition().getLatitude());
+            params.put("lon2", marker2.getGeoPosition().getLongitude());
+            params.put("distance", distance);
 
-                session.writeTransaction(tx -> tx.run(query, params));
-            }
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
+            session.writeTransaction(tx -> tx.run(query, params));
         }
     }
 
