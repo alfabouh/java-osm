@@ -1,6 +1,5 @@
 package org.map_db.ui;
 
-import javafx.util.Pair;
 import org.jxmapviewer.JXMapViewer;
 import org.jxmapviewer.OSMTileFactoryInfo;
 import org.jxmapviewer.viewer.AbstractTileFactory;
@@ -8,6 +7,7 @@ import org.jxmapviewer.viewer.GeoPosition;
 import org.jxmapviewer.viewer.TileFactory;
 import org.jxmapviewer.viewer.TileFactoryInfo;
 import org.map_db.DB;
+import org.map_db.Pair;
 import org.map_db.ui.handler.AddressHandler;
 import org.map_db.ui.view.MapViewerExt;
 import org.map_db.ui.view.markers.Marker;
@@ -324,7 +324,7 @@ public class MVPanel {
                 }
                 case CLIENT: {
                     Pair<Marker, Double> pair = DB.getClientsSupplyP(m1);
-                    JOptionPane.showMessageDialog(null, "Клиент" + "\n" + m1.getAddress() + "\n" + "Пункт выдачи: " + pair.getKey().getAddress() + "\n" + "Расстояние: " + pair.getValue(), "Info", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Клиент" + "\n" + m1.getAddress() + "\n" + "Пункт выдачи: " + pair.getFirst().getAddress() + "\n" + "Расстояние: " + pair.getSecond(), "Info", JOptionPane.INFORMATION_MESSAGE);
                     break;
                 }
                 case SUPPLY: {

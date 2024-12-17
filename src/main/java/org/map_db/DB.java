@@ -1,6 +1,5 @@
 package org.map_db;
 
-import javafx.util.Pair;
 import org.jxmapviewer.viewer.GeoPosition;
 import org.map_db.ui.handler.AddressHandler;
 import org.map_db.ui.view.markers.Marker;
