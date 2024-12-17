@@ -8,12 +8,4 @@ public class Main {
         MVPanel panel = new MVPanel(edgesPacket.getHead(), edgesPacket.getMarkersContainer());
         panel.render();
     }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        if (DB.DRIVER != null) {
-            DB.DRIVER.close();
-        }
-    }
 }

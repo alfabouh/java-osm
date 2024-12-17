@@ -33,6 +33,15 @@ public class MVPanel {
         this.frame = new JFrame("map_viewer");
         this.addressHandler = new AddressHandler(pointData, this);
         this.markersContainer = markersContainer;
+
+        this.frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (DB.DRIVER != null) {
+                    DB.DRIVER.close();
+                }
+            }
+        });
     }
 
     public void repaint(final JXMapViewer mapViewer) {
